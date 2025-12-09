@@ -1,5 +1,6 @@
 wget -O splunkforwarder-9.4.5-8fb2a6c586a5-windows-x64.msi "https://download.splunk.com/products/universalforwarder/releases/9.4.5/windows/splunkforwarder-9.4.5-8fb2a6c586a5-windows-x64.msi"
 
+wget -O splunkforwarder-9.2.2-d76edf6f0a15-x64-release.msi "https://download.splunk.com/products/universalforwarder/releases/9.2.2/windows/splunkforwarder-9.2.2-d76edf6f0a15-x64-release.msi"
 
 msiexec.exe /i {splunkuniversalforwarder_x86.msi} DEPLOYMENT_SERVER="deploymentserver.westus2.cloudapp.azure.com:8089" USE_LOCAL_SYSTEM=1 LAUNCHSPLUNK=0 USE_VIRTUAL_ACCOUNT=0 AGREETOLICENSE=Yes /quiet
 
@@ -69,4 +70,5 @@ try {
 }
 catch {
     exit 1
+
 }
