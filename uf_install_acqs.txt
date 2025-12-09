@@ -1,0 +1,72 @@
+wget -O splunkforwarder-9.4.5-8fb2a6c586a5-windows-x64.msi "https://download.splunk.com/products/universalforwarder/releases/9.4.5/windows/splunkforwarder-9.4.5-8fb2a6c586a5-windows-x64.msi"
+
+
+msiexec.exe /i {splunkuniversalforwarder_x86.msi} DEPLOYMENT_SERVER="deploymentserver.westus2.cloudapp.azure.com:8089" USE_LOCAL_SYSTEM=1 LAUNCHSPLUNK=0 USE_VIRTUAL_ACCOUNT=0 AGREETOLICENSE=Yes /quiet
+
+
+UF cloning instructions - 
+	
+	https://help.splunk.com/en/splunk-enterprise/administer/admin-manual/9.0/welcome-to-splunk-enterprise-administration/get-the-most-out-of-splunk-enterprise-on-windows/integrate-a-universal-forwarder-onto-a-system-image
+
+			Install and configure Windows and applications
+	1. On a reference computer, install and configure Windows the way that you want, including installing Windows features, service packs, and other components.
+	2. Install and configure necessary applications, taking into account Splunk's system and hardware capacity requirements.
+	3. Install and configure the universal forwarder from the command line. You must supply at least the LAUNCHSPLUNK=0 command line flag when you perform the installation.
+##OpCos may ignore step 4, leaving it for posterity.##
+	4. Proceed through the graphical portion of the install, selecting the inputs, deployment servers, and/or forwarder destinations you want.
+	5. After the installation has completed, open a command prompt or PowerShell window.
+			Edit configurations and run clone-prep-clear-config
+	1. (Optional) Edit configuration files that were not configurable in the installer.
+	2. Change to the universal forwarder bin directory.
+	3. Run ./splunk clone-prep-clear-config.
+	4. Exit the command prompt or PowerShell window.
+	5. In the Services Control Panel, configure the splunkd service to start automatically by setting its startup type to 'Automatic'.
+	6. Prepare the system image for domain participation using a utility such as Windows System Image Manager (WSIM). Microsoft recommends using SYSPREP or WSIM as the method to change machine Security Identifiers (SIDs) prior to cloning, as opposed to using third-party tools (such as Ghost Walker or NTSID.)
+			Clone and restore the image
+	1. Restart the machine and clone it with your favorite imaging utility.
+	2. After cloning the image, use the imaging utility to restore it into another physical or virtual machine.
+	3. Run the cloned image. Splunk services start automatically.
+	4. Use the CLI to restart Splunk Enterprise to remove the cloneprep information: splunk restart
+		Note: You must restart Splunk Enterprise from the CLI to delete the cloneprep file. Restarting the Splunk service does not perform the deletion.
+	5. Confirm that the $SPLUNK_HOME\cloneprep file has been deleted.
+	
+	
+try {
+    # Query the service using CIM
+    $service = Get-CimInstance -ClassName Win32_Service -Filter "Name='SplunkForwarder'" -ErrorAction Stop
+
+    if ($null -eq $service) {
+        #document unable to find service
+        exit 1
+    }
+	
+	if ($service.StartName != LocalSystem){
+		#stop splunk universal forwarder if it is running
+		if ($service.State == Running) {
+			C:\Program Files\SplunkUniversalForwarder\bin\splunk stop
+		}
+		#Wait till service is stopped. (how to do this?)
+		#some command to wait for service to stop
+		
+		#Set the service to start as LocalSystem
+		#two possible solutions.
+			#sc.exe config "SplunkForwarder" obj= "LocalSystem"
+			#$service.Change($null, $null, $null, $null, $null, $null, "LocalSystem", $null, $null, $null, $null)
+		
+		#Start the universal forwarder
+		C:\Program Files\SplunkUniversalForwarder\bin\splunk start
+		
+	}
+	#some how document successful completion. 
+	$service = Get-CimInstance -ClassName Win32_Service -Filter "Name='SplunkForwarder'" -ErrorAction Stop
+	if ($service.StartName != LocalSystem)
+		if ($service.State == Running)
+			#document success
+		#document service did not start.
+		exit 1
+	#document service is still not LocalSystem.
+	exit 1
+}
+catch {
+    exit 1
+}
